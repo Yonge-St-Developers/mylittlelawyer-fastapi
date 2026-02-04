@@ -1,0 +1,18 @@
+# Chunking configuration for document-based + recursive splitting
+chunk_size_tokens: 800
+chunk_overlap_tokens: 120
+min_chunk_tokens: 200
+
+# Heading detection patterns (case-insensitive)
+heading_prefixes:
+  - "section "
+  - "part "
+  - "chapter "
+  - "appendix "
+
+# Recursive separators used to break long sections
+separators:
+  - "\n\n"
+  - "\n"
+  - " "
+  - ""

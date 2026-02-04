@@ -1,8 +1,11 @@
 fastapi
 uvicorn[standard]
 langgraph
-google-generativeai
+langchain-core
+google-genai
 pinecone-client
 pydantic
 python-dotenv
 httpx
+pypdf
+pyyaml
