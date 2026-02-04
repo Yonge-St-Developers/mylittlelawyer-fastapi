@@ -13,7 +13,7 @@ from src.rag.embedder import embed_query, embed_texts
 
 class TestPineconeRoundtrip(unittest.TestCase):
     def test_embed_upsert_query_roundtrip(self) -> None:
-        test_index = os.getenv("PINECONE_TEST_INDEX", "TEST-INDEX").strip()
+        test_index = os.getenv("PINECONE_TEST_INDEX", "test-index").strip()
         cloud = os.getenv("PINECONE_CLOUD", "aws").strip()
         region = os.getenv("PINECONE_REGION", "us-east-1").strip()
 
