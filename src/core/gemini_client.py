@@ -65,6 +65,22 @@ class GeminiClientManager:
         return embeddings[0].values
 
 
+class GeminiEmbeddingClient:
+    """Dedicated embedding client using the Gemini embeddings API."""
+
+    def __init__(self, api_key: str | None = None) -> None:
+        self._client = genai.Client(api_key=api_key)
+
+    def embed_content(self, model: str, contents: str | list[str]) -> list[list[float]]:
+        """Call the embeddings API and return vectors."""
+
+        result = self._client.models.embed_content(
+            model=model,
+            contents=contents,
+        )
+        embeddings = result.embeddings or []
+        return [e.values for e in embeddings]
+
 def _load_config_from_env() -> GeminiConfig:
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
     model_name = os.getenv("GEMINI_MODEL", "").strip()
