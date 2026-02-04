@@ -6,3 +6,4 @@ pinecone-client
 pydantic
 python-dotenv
 httpx
+pypdf
