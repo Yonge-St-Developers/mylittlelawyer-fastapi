@@ -28,6 +28,10 @@ class TestGeminiEmbedder(unittest.TestCase):
         self.assertEqual(len(vectors), 1)
         self.assertGreater(len(vectors[0]), 0)
 
+        print("\n=== EMBEDDING OUTPUT ===")
+        print(f"Vector length: {len(vectors[0])}")
+        print(f"First 10 values: {vectors[0][:10]}")
+
 
 if __name__ == "__main__":
     unittest.main()

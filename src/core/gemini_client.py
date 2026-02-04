@@ -46,7 +46,6 @@ class GeminiClientManager:
         response = self._client.models.embed_content(
             model=self._config.embedding_model,
             contents=list(texts),
-            task_type="retrieval_document",
         )
         embeddings = response.embeddings or []
         return [e.values for e in embeddings]
@@ -57,7 +56,6 @@ class GeminiClientManager:
         response = self._client.models.embed_content(
             model=self._config.embedding_model,
             contents=text,
-            task_type="retrieval_query",
         )
         embeddings = response.embeddings or []
         if not embeddings:
