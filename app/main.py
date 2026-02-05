@@ -1,8 +1,4 @@
-from fastapi import FastAPI
+from app.app import app
 
-app = FastAPI(title="FastAPI App", version="0.1.0")
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+# FastAPI application instance
+# This module is used by ASGI servers (e.g., uvicorn) to launch the service.
