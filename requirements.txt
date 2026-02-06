@@ -7,5 +7,6 @@ pinecone
 pydantic
 python-dotenv
 httpx
+gdown
 pypdf
 pyyaml

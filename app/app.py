@@ -1,6 +1,14 @@
 from fastapi import FastAPI
 
-from app.schemas import ChatRequest, ChatResponse, FileRequest, FileResponse
+from app.schemas import (
+    ChatRequest,
+    ChatResponse,
+    FileRequest,
+    FileResponse,
+    IndexerRequest,
+    IndexerResponse,
+)
+from src.rag.indexer import index_all_from_env
 
 app = FastAPI(title="FastAPI App", version="0.1.0")
 
@@ -54,3 +62,13 @@ def file_endpoint(payload: FileRequest) -> FileResponse:
         file_url=None,
         message="File generation is not implemented yet.",
     )
+
+
+@app.post("/lahwita/ai/indexr/", response_model=IndexerResponse)
+def indexer_endpoint(payload: IndexerRequest) -> IndexerResponse:
+    """
+    Index all configured Drive folders into Pinecone.
+    """
+
+    results = index_all_from_env(index_keys=payload.index_keys)
+    return IndexerResponse(status="success", results=results)

@@ -88,3 +88,22 @@ class FileResponse(BaseModel):
         default=None,
         description="Additional info for the client.",
     )
+
+
+class IndexerRequest(BaseModel):
+    """Indexer endpoint request payload."""
+
+    index_keys: Optional[List[str]] = Field(
+        default=None,
+        description="Optional list of index keys to run (e.g., rta_act, ltb_forms).",
+    )
+
+
+class IndexerResponse(BaseModel):
+    """Indexer endpoint response payload."""
+
+    status: str = Field(..., description="Status of the request: success/error")
+    results: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Per-index results for the indexing run.",
+    )
