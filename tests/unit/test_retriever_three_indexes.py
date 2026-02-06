@@ -26,12 +26,10 @@ class TestRetrieverThreeIndexes(unittest.TestCase):
         self.assertTrue(retrieval_results, "No retrieval results returned.")
 
         configured = {
-            "rta_act": os.getenv("INDEX_RTA_ACT", "").strip(),
             "sppa_act": os.getenv("INDEX_SPPA_ACT", "").strip(),
             "ltb_rules": os.getenv("INDEX_LTB_RULES", "").strip(),
             "ltb_practice_directions": os.getenv("INDEX_LTB_PRACTICE_DIRECTIONS", "").strip(),
             "ltb_guidelines": os.getenv("INDEX_LTB_GUIDELINES", "").strip(),
-            "ltb_forms": os.getenv("INDEX_LTB_FORMS", "").strip(),
             "form_instructions": os.getenv("INDEX_FORM_INSTRUCTIONS", "").strip(),
         }
 
