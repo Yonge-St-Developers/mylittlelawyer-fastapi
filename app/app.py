@@ -9,6 +9,7 @@ from app.schemas import (
     IndexerResponse,
 )
 from src.graph.builder import build_chat_graph
+from src.graph.file_builder import build_file_graph
 from src.rag.indexer import index_all_from_env
 
 app = FastAPI(title="FastAPI App", version="0.1.0")
@@ -62,10 +63,26 @@ def file_endpoint(payload: FileRequest) -> FileResponse:
     and storage. AI logic is intentionally omitted.
     """
 
+    compiled = build_file_graph()
+    state = {
+        "session_id": payload.session_id,
+        "form_title": payload.form_title,
+        "chat_history": [
+            {"role": item.role, "content": item.content} for item in payload.chat_history
+        ],
+    }
+    result = compiled.invoke(state)
+
+    file_json = result.get("file_json") or {}
+    file_name = None
+    if isinstance(file_json, dict):
+        file_name = file_json.get("file_name")
+
     return FileResponse(
-        status="pending",
-        file_url=None,
-        message="File generation is not implemented yet.",
+        status="success",
+        file_name=file_name,
+        file_json=file_json,
+        message=None,
     )
 
 
