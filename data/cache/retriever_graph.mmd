@@ -1,0 +1,20 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	retrieve_all_indexes(retrieve_all_indexes)
+	retrieve_six_indexes_for_form_questions(retrieve_six_indexes_for_form_questions)
+	retrieve_form_instructions_only(retrieve_form_instructions_only)
+	__end__([<p>__end__</p>]):::last
+	__start__ -.-> retrieve_all_indexes;
+	__start__ -.-> retrieve_form_instructions_only;
+	__start__ -.-> retrieve_six_indexes_for_form_questions;
+	retrieve_all_indexes --> __end__;
+	retrieve_form_instructions_only --> __end__;
+	retrieve_six_indexes_for_form_questions --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
