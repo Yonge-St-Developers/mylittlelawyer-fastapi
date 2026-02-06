@@ -8,6 +8,8 @@ from app.schemas import (
     IndexerRequest,
     IndexerResponse,
 )
+from src.graph.builder import build_chat_graph
+from src.graph.file_builder import build_file_graph
 from src.rag.indexer import index_all_from_env
 
 app = FastAPI(title="FastAPI App", version="0.1.0")
@@ -30,20 +32,24 @@ def chat_endpoint(payload: ChatRequest) -> ChatResponse:
     NOTE: AI logic intentionally omitted. This is a routing stub only.
     """
 
-    if payload.form is None:
-        # Form is unknown: guide the user to identify the correct form.
-        return ChatResponse(
-            message="We have not found the suitable form yet. Please provide more details.",
-            form=None,
-            next_field=None,
-            fields=None,
-        )
+    compiled = build_chat_graph()
+    state = {
+        "session_id": payload.session_id,
+        "new_message": payload.new_message,
+        "chat_history": [
+            {"role": item.role, "content": item.content}
+            for item in (payload.chat_history or [])
+        ],
+        "form": payload.form,
+    }
 
-    # Form is known: ask for next field or answer questions.
+    result = compiled.invoke(state)
+    message = result.get("response_text") or ""
+
     return ChatResponse(
-        message="Please provide the next required field.",
-        form=payload.form,
-        next_field="next_required_field",
+        message=message,
+        form=result.get("form"),
+        next_field=None,
         fields=None,
     )
 
@@ -57,10 +63,26 @@ def file_endpoint(payload: FileRequest) -> FileResponse:
     and storage. AI logic is intentionally omitted.
     """
 
+    compiled = build_file_graph()
+    state = {
+        "session_id": payload.session_id,
+        "form_title": payload.form_title,
+        "chat_history": [
+            {"role": item.role, "content": item.content} for item in payload.chat_history
+        ],
+    }
+    result = compiled.invoke(state)
+
+    file_json = result.get("file_json") or {}
+    file_name = None
+    if isinstance(file_json, dict):
+        file_name = file_json.get("file_name")
+
     return FileResponse(
-        status="pending",
-        file_url=None,
-        message="File generation is not implemented yet.",
+        status="success",
+        file_name=file_name,
+        file_json=file_json,
+        message=None,
     )
 
 

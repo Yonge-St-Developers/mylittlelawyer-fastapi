@@ -71,8 +71,7 @@ class FileResponse(BaseModel):
     """
     File endpoint response payload.
 
-    This returns a file reference or status. The AI generation step is left blank
-    per instructions.
+    This returns the JSON payload for PDF generation.
     """
 
     status: str = Field(..., description="Status of the request: success/pending/error")
@@ -80,9 +79,9 @@ class FileResponse(BaseModel):
         default=None,
         description="Generated PDF filename (e.g., form_a1.pdf).",
     )
-    file_base64: Optional[str] = Field(
+    file_json: Optional[dict[str, Any]] = Field(
         default=None,
-        description="Base64-encoded PDF bytes to send directly to Django.",
+        description="JSON payload with form fields for PDF generation.",
     )
     message: Optional[str] = Field(
         default=None,
