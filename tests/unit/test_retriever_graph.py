@@ -61,12 +61,10 @@ class TestRetrieverGraph(unittest.TestCase):
         self.assertTrue(retrieval_results, "No retrieval results returned.")
 
         expected = {
-            "rta_act",
             "sppa_act",
             "ltb_rules",
             "ltb_practice_directions",
             "ltb_guidelines",
-            "ltb_forms",
         }
         self.assertEqual(set(retrieval_results.keys()), expected)
 
