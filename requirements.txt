@@ -10,3 +10,4 @@ httpx
 gdown
 pypdf
 pyyaml
+streamlit
