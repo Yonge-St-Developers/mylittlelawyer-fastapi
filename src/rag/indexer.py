@@ -240,7 +240,7 @@ def index_all_from_env(
 
     mapping = {
         "rta_act": (
-            os.getenv("INDEX_RTA_ACT", ""),
+            os.getenv("INDEX_SPPA_ACT", ""),
             os.getenv("INDEX_RTA_ACT_DRIVE_URL", ""),
             os.getenv("INDEX_RTA_ACT_LOCAL_DIR", ""),
         ),
@@ -288,6 +288,10 @@ def index_all_from_env(
         if not index_name:
             results[key] = {"skipped": True, "reason": "missing index name"}
             continue
+
+        local_default_dir = Path(local_dir) / key
+        if not local_dir_override and local_default_dir.exists():
+            local_dir_override = str(local_default_dir)
 
         if local_dir_override:
             results[key] = index_local_folder(
