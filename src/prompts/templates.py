@@ -14,7 +14,7 @@ FORM_INTENT_PROMPT = PromptTemplate(
         "2) asking_about_form\n"
         "3) describing_situation\n"
         "4) other\n\n"
-        "Then decide whether a specific LTB form is likely needed.\n\n"
+        "Then decide whether a specific LTB application form is likely needed.\n\n"
         "User message: {message}\n\n"
         "Return a concise JSON-like object with keys:\n"
         "intent (one of the 4 above),\n"
@@ -28,7 +28,7 @@ FORM_INTENT_PROMPT = PromptTemplate(
 FORM_DISCOVERY_PROMPT = PromptTemplate(
     input_variables=["message", "current_hint"],
     template=(
-        "You are helping identify the correct LTB form. "
+        "You are helping identify the correct LTB application. "
         "Be polite, clear, and precise. Ask only ONE concise clarifying question. "
         "Do not provide multiple options unless necessary.\n\n"
         "User message: {message}\n"
@@ -81,15 +81,15 @@ FORM_FILE_JSON_PROMPT = PromptTemplate(
         "Use only the chat history to infer field values. "
         "If a value is missing or unclear, leave it null and list the field name in missing_fields. "
         "Return ONLY valid JSON with this exact shape:\n"
-        "{\n"
+        "{{\n"
         '  "file_name": "<suggested filename ending with .pdf>",\n'
         '  "form_title": "<form title>",\n'
-        '  "fields": {\n'
+        '  "fields": {{\n'
         '    "<field_key>": "<value or null>"\n'
-        "  },\n"
+        "  }},\n"
         '  "missing_fields": ["<field_key>", "..."],\n'
         '  "assumptions": ["<short assumption>", "..."]\n'
-        "}\n\n"
+        "}}\n\n"
         "Chat history:\n{chat_history}\n\n"
         "Return only JSON. No extra text."
     ),

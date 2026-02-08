@@ -11,13 +11,17 @@ services:
     volumes:
       - .:/app
     restart: unless-stopped
-  indexr:
+
+  streamlit:
     build: .
-    container_name: mll_indexr
+    container_name: mll_streamlit
+    command: ["streamlit", "run", "app/streamlit_app.py", "--server.address", "0.0.0.0", "--server.port", "8501"]
+    environment:
+      - FASTAPI_URL=http://api:8000
     ports:
-      - "8001:8000"
-    env_file:
-      - .env
+      - "8501:8501"
     volumes:
       - .:/app
+    depends_on:
+      - api
     restart: unless-stopped
