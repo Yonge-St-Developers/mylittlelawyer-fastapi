@@ -9,6 +9,7 @@ from app.schemas import (
     IndexerResponse,
 )
 from src.graph.builder import build_chat_graph
+from src.graph.helpers import format_retrieval_context
 from src.graph.file_builder import build_file_graph
 from src.rag.indexer import index_all_from_env
 
@@ -46,11 +47,25 @@ def chat_endpoint(payload: ChatRequest) -> ChatResponse:
     result = compiled.invoke(state)
     message = result.get("response_text") or ""
 
+    retrieval = result.get("retrieval_results") or {}
+    debug_request = {
+        "message": payload.new_message,
+        "chat_history": state.get("chat_history"),
+        "form": payload.form,
+        "intent": result.get("intent"),
+    }
+    debug_retrieval = {
+        "summary": format_retrieval_context(retrieval),
+        "raw_keys": list(retrieval.keys()),
+    }
+
     return ChatResponse(
         message=message,
         form=result.get("form"),
         next_field=None,
         fields=None,
+        debug_request=debug_request,
+        debug_retrieval=debug_retrieval,
     )
 
 
