@@ -47,3 +47,19 @@ def format_retrieval_context(results: Dict[str, Any]) -> str:
                 context_chunks.append(f"[{index_name}] {text}")
 
     return "\n\n".join(context_chunks).strip()
+
+
+def format_chat_history(history: List[Dict[str, str]] | None) -> str:
+    """Convert chat history into a concise, readable string."""
+
+    if not history:
+        return "No chat history provided."
+
+    lines: List[str] = []
+    for item in history:
+        role = item.get("role", "user")
+        content = item.get("content", "").strip()
+        if content:
+            lines.append(f"{role}: {content}")
+
+    return "\n".join(lines).strip() or "No chat history provided."

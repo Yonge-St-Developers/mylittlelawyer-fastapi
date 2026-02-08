@@ -6,16 +6,18 @@ from langchain_core.prompts import PromptTemplate
 
 # 1) Determine the user's current need and whether a form is required
 FORM_INTENT_PROMPT = PromptTemplate(
-    input_variables=["message"],
+    input_variables=["message", "chat_history"],
     template=(
         "You are a legal intake assistant for Ontario LTB matters. "
+        "Use BOTH the latest message and the chat history to classify intent.\n\n"
+        "Chat history:\n{chat_history}\n\n"
+        "Latest user message: {message}\n\n"
         "Classify the user's message into ONE primary intent:\n"
         "1) answering_form_field\n"
         "2) asking_about_form\n"
         "3) describing_situation\n"
         "4) other\n\n"
         "Then decide whether a specific LTB application form is likely needed.\n\n"
-        "User message: {message}\n\n"
         "Return a concise JSON-like object with keys:\n"
         "intent (one of the 4 above),\n"
         "need_form (yes/no),\n"
@@ -26,11 +28,12 @@ FORM_INTENT_PROMPT = PromptTemplate(
 
 # 2) Ask clarifying questions to identify the correct form
 FORM_DISCOVERY_PROMPT = PromptTemplate(
-    input_variables=["message", "current_hint"],
+    input_variables=["message", "current_hint", "chat_history"],
     template=(
         "You are helping identify the correct LTB application. "
         "Be polite, clear, and precise. Ask only ONE concise clarifying question. "
-        "Do not provide multiple options unless necessary.\n\n"
+        "Use the chat history to avoid repeating questions already answered.\n\n"
+        "Chat history:\n{chat_history}\n\n"
         "User message: {message}\n"
         "Current form hint: {current_hint}\n\n"
         "Ask the single best question to determine the correct form."
