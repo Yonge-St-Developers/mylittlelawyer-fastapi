@@ -31,14 +31,16 @@ FORM_DISCOVERY_PROMPT = PromptTemplate(
     input_variables=["message", "current_hint", "chat_history", "context"],
     template=(
         "You are helping identify the correct LTB application form. "
-        "Be polite, clear, and precise. Ask only ONE concise clarifying question. "
+        "Be polite, clear, and precise. "
+        "You may ask several short questions in one message, but keep it concise. "
+        "Limit the discovery phase to at most 5 total messages. "
         "Use the chat history to avoid repeating questions already answered. "
         "Use retrieved context to ground your question if possible.\n\n"
         "Chat history:\n{chat_history}\n\n"
         "Retrieved context (may be empty):\n{context}\n\n"
         "User message: {message}\n"
         "Current form hint: {current_hint}\n\n"
-        "Ask the single best question to determine the correct form. "
+        "Ask the best question(s) to determine the correct form. "
         "Do NOT ask about details already provided."
     ),
 )
