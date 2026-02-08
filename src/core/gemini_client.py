@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Iterable
 
 from google import genai
+from google.genai import errors as genai_errors
 
 
 @dataclass(frozen=True)
@@ -32,8 +34,7 @@ class GeminiClientManager:
 
     def generate_text(self, contents: str, **kwargs: Any) -> str:
         """Generate text with the configured Gemini model."""
-
-        response = self._client.models.generate_content(
+        response = self._retry_generate_content(
             model=self._config.model_name,
             contents=contents,
             **kwargs,
@@ -42,8 +43,7 @@ class GeminiClientManager:
 
     def embed_documents(self, texts: Iterable[str]) -> list[list[float]]:
         """Embed a batch of documents."""
-
-        response = self._client.models.embed_content(
+        response = self._retry_embed_content(
             model=self._config.embedding_model,
             contents=list(texts),
         )
@@ -52,8 +52,7 @@ class GeminiClientManager:
 
     def embed_query(self, text: str) -> list[float]:
         """Embed a single query for retrieval."""
-
-        response = self._client.models.embed_content(
+        response = self._retry_embed_content(
             model=self._config.embedding_model,
             contents=text,
         )
@@ -61,6 +60,46 @@ class GeminiClientManager:
         if not embeddings:
             return []
         return embeddings[0].values
+
+    def _retry_generate_content(self, **kwargs: Any):
+        """Retry wrapper for generate_content (handles 429/503)."""
+
+        return _retry_with_backoff(self._client.models.generate_content, **kwargs)
+
+    def _retry_embed_content(self, **kwargs: Any):
+        """Retry wrapper for embed_content (handles 429/503)."""
+
+        return _retry_with_backoff(self._client.models.embed_content, **kwargs)
+
+
+def _retry_with_backoff(fn, **kwargs: Any):
+    """Basic retry with exponential backoff for transient Gemini errors."""
+
+    max_attempts = int(os.getenv("GEMINI_MAX_RETRIES", "3"))
+    base_delay = float(os.getenv("GEMINI_RETRY_DELAY_SECONDS", "2"))
+
+    attempt = 0
+    while True:
+        try:
+            return fn(**kwargs)
+        except (genai_errors.ClientError, genai_errors.ServerError) as exc:
+            attempt += 1
+            if attempt >= max_attempts:
+                raise
+
+            # If API provides retryDelay in error details, honor it
+            retry_delay = base_delay * (2 ** (attempt - 1))
+            try:
+                details = getattr(exc, "details", None) or []
+                for item in details:
+                    if isinstance(item, dict) and item.get("@type", "").endswith("RetryInfo"):
+                        delay = item.get("retryDelay", "")
+                        if isinstance(delay, str) and delay.endswith("s"):
+                            retry_delay = float(delay[:-1])
+            except Exception:
+                pass
+
+            time.sleep(retry_delay)
 
 
 class GeminiEmbeddingClient:
