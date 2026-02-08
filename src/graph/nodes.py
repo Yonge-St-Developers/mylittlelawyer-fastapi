@@ -79,18 +79,24 @@ def generate_response(state: ChatState) -> ChatState:
             message=state["new_message"],
             current_hint=state.get("form") or "unknown",
             chat_history=chat_history,
+            context=context or "No relevant context found.",
         )
     elif prompt_name == "FORM_QA_PROMPT":
+        chat_history = format_chat_history(state.get("chat_history"))
         prompt = FORM_QA_PROMPT.format(
             message=state["new_message"],
             form_title=state.get("form") or "unknown",
             context=context or "No relevant context found.",
+            chat_history=chat_history,
         )
     elif prompt_name == "FORM_FILL_PROMPT":
+        chat_history = format_chat_history(state.get("chat_history"))
         prompt = FORM_FILL_PROMPT.format(
             form_title=state.get("form") or "unknown",
             known_fields=format_fields(state.get("known_fields")),
             remaining_fields=format_fields(state.get("remaining_fields")),
+            chat_history=chat_history,
+            context=context or "No relevant context found.",
         )
     else:
         prompt = FORM_CONFIRM_PROMPT.format(

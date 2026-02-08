@@ -28,41 +28,49 @@ FORM_INTENT_PROMPT = PromptTemplate(
 
 # 2) Ask clarifying questions to identify the correct form
 FORM_DISCOVERY_PROMPT = PromptTemplate(
-    input_variables=["message", "current_hint", "chat_history"],
+    input_variables=["message", "current_hint", "chat_history", "context"],
     template=(
-        "You are helping identify the correct LTB application. "
+        "You are helping identify the correct LTB application form. "
         "Be polite, clear, and precise. Ask only ONE concise clarifying question. "
-        "Use the chat history to avoid repeating questions already answered.\n\n"
+        "Use the chat history to avoid repeating questions already answered. "
+        "Use retrieved context to ground your question if possible.\n\n"
         "Chat history:\n{chat_history}\n\n"
+        "Retrieved context (may be empty):\n{context}\n\n"
         "User message: {message}\n"
         "Current form hint: {current_hint}\n\n"
-        "Ask the single best question to determine the correct form."
+        "Ask the single best question to determine the correct form. "
+        "Do NOT ask about details already provided."
     ),
 )
 
 # 3) Answer user questions about the form
 FORM_QA_PROMPT = PromptTemplate(
-    input_variables=["message", "form_title", "context"],
+    input_variables=["message", "form_title", "context", "chat_history"],
     template=(
         "You are answering questions about the LTB form: {form_title}. "
-        "Be polite, clear, and exact. Only use the provided context. "
+        "Be polite, clear, and exact. Use the chat history to keep continuity. "
+        "Only use the provided context to answer. "
         "If the answer is not in the context, say you don't have enough information.\n\n"
+        "Chat history:\n{chat_history}\n\n"
         "Relevant context:\n{context}\n\n"
         "User question: {message}\n\n"
-        "Provide a concise, accurate answer."
+        "Provide a concise, accurate answer grounded in the context."
     ),
 )
 
 # 4) Ask for the next required field during form filling
 FORM_FILL_PROMPT = PromptTemplate(
-    input_variables=["form_title", "known_fields", "remaining_fields"],
+    input_variables=["form_title", "known_fields", "remaining_fields", "chat_history", "context"],
     template=(
         "You are guiding the user to fill the LTB form: {form_title}. "
         "Be polite, clear, and exact. Ask for only ONE field at a time. "
+        "Use chat history to avoid repeating answered fields. "
         "If the field has a required format (date, amount, address), state the format.\n\n"
+        "Chat history:\n{chat_history}\n\n"
+        "Relevant context (may be empty):\n{context}\n\n"
         "Known fields: {known_fields}\n"
         "Remaining fields: {remaining_fields}\n\n"
-        "Ask for the next single most important field."
+        "Ask for the next single most important missing field."
     ),
 )
 
