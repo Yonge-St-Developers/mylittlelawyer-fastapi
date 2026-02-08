@@ -19,6 +19,8 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "form" not in st.session_state:
     st.session_state.form = None
+if "debug_last" not in st.session_state:
+    st.session_state.debug_last = None
 
 
 def call_chat(message: str) -> Dict[str, Any]:
@@ -84,11 +86,25 @@ if user_message:
                 st.session_state.form = result["form"]
 
             st.session_state.chat_history.append({"role": "assistant", "content": response_text})
+            st.session_state.debug_last = {
+                "debug_request": result.get("debug_request"),
+                "debug_retrieval": result.get("debug_retrieval"),
+            }
         except Exception as exc:
             st.error(f"Chat request failed: {exc}")
 
 
 st.divider()
+
+st.subheader("Debug Logs")
+with st.expander("Show last model inputs & retrieval"):
+    if st.session_state.debug_last:
+        st.code(
+            json.dumps(st.session_state.debug_last, indent=2, ensure_ascii=False),
+            language="json",
+        )
+    else:
+        st.write("No logs yet.")
 
 st.subheader("PDF Downloader")
 if st.button("Generate PDF"):

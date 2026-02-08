@@ -52,6 +52,14 @@ class ChatResponse(BaseModel):
         default=None,
         description="Optional structured field hints or metadata.",
     )
+    debug_request: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Debug payload showing what was sent to the model.",
+    )
+    debug_retrieval: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Debug payload showing retrieved data (if available).",
+    )
 
 
 class FileRequest(BaseModel):

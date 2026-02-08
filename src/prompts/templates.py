@@ -81,15 +81,15 @@ FORM_FILE_JSON_PROMPT = PromptTemplate(
         "Use only the chat history to infer field values. "
         "If a value is missing or unclear, leave it null and list the field name in missing_fields. "
         "Return ONLY valid JSON with this exact shape:\n"
-        "{\n"
+        "{{\n"
         '  "file_name": "<suggested filename ending with .pdf>",\n'
         '  "form_title": "<form title>",\n'
-        '  "fields": {\n'
+        '  "fields": {{\n'
         '    "<field_key>": "<value or null>"\n'
-        "  },\n"
+        "  }},\n"
         '  "missing_fields": ["<field_key>", "..."],\n'
         '  "assumptions": ["<short assumption>", "..."]\n'
-        "}\n\n"
+        "}}\n\n"
         "Chat history:\n{chat_history}\n\n"
         "Return only JSON. No extra text."
     ),
