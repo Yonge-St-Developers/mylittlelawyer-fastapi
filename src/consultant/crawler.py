@@ -10,7 +10,7 @@ from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
-from langchain_community.document_loaders import RecursiveUrlLoader
+from langchain_community.document_loaders import PlaywrightURLLoader
 
 from src.consultant.chroma_client import chroma_add, get_or_create_collection
 from src.processing.chunking import chunk_text
@@ -58,27 +58,41 @@ def crawl_canlii_case_pages(
     max_depth: int = 3,
     max_pages: int = 6,
 ) -> list[dict]:
-    """Crawl CanLII pages using LangChain RecursiveUrlLoader."""
+    """Crawl CanLII pages using Playwright (JS-capable)."""
 
-    def _html_extractor(html: str) -> str:
-        # Keep raw HTML for link extraction; text is derived later.
-        return html
+    # NOTE: PlaywrightURLLoader loads only provided URLs. We crawl by expanding links
+    # from each page up to max_depth and max_pages.
 
-    loader = RecursiveUrlLoader(
-        start_url,
-        max_depth=max_depth,
-        prevent_outside=True,
-        extractor=_html_extractor,
-    )
-
-    docs = loader.load()
-    docs = docs[:max_pages]
-
+    visited = set()
+    to_visit = [start_url]
     results = []
-    for doc in docs:
-        source = doc.metadata.get("source", "")
-        html = doc.page_content or ""
-        results.append({"source": source, "html": html})
+
+    depth = 0
+    while to_visit and len(results) < max_pages and depth < max_depth:
+        batch = list(dict.fromkeys(to_visit))
+        to_visit = []
+
+        loader = PlaywrightURLLoader(urls=batch, remove_selectors=["script", "style"])
+        docs = loader.load()
+
+        for doc in docs:
+            source = doc.metadata.get("source", "")
+            if not source or source in visited:
+                continue
+            visited.add(source)
+
+            html = doc.page_content or ""
+            results.append({"source": source, "html": html})
+
+            # Expand links for next depth
+            for link in _extract_links(html, source):
+                if _is_same_domain(link, start_url) and link not in visited:
+                    to_visit.append(link)
+
+            if len(results) >= max_pages:
+                break
+
+        depth += 1
 
     return results
 
