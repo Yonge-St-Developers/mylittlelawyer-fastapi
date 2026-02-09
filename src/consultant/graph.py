@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, TypedDict
 
 from langgraph.graph import END, StateGraph
 
-from src.consultant.crawler import crawl_and_index
+from src.consultant.local_indexer import index_local_pdfs
 from src.consultant.prompts import CONSULTANT_PROMPT
 from src.consultant.retriever import retrieve_cases
 from src.core.gemini_client import get_default_gemini_manager
@@ -27,7 +27,7 @@ def maybe_crawl(state: ConsultantState) -> ConsultantState:
     """Optionally refresh the case index from CanLII."""
 
     if state.get("refresh_index"):
-        crawl_and_index()
+        index_local_pdfs()
     return state
 
 
