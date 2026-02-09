@@ -10,6 +10,7 @@ from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup
+from langchain_community.document_loaders import RecursiveUrlLoader
 
 from src.consultant.chroma_client import chroma_add, get_or_create_collection
 from src.processing.chunking import chunk_text
@@ -54,60 +55,44 @@ def _extract_links(html: str, base_url: str) -> list[str]:
 
 def crawl_canlii_case_pages(
     start_url: str = DEFAULT_START_URL,
-    max_pages: int = 50,
-    sleep_seconds: float = 0.25,
-) -> list[str]:
-    """Crawl CanLII listing pages and collect case page URLs."""
+    max_depth: int = 3,
+    max_pages: int = 6,
+) -> list[dict]:
+    """Crawl CanLII pages using LangChain RecursiveUrlLoader."""
 
-    visited = set()
-    to_visit = [start_url]
-    case_pages: set[str] = set()
+    def _html_extractor(html: str) -> str:
+        # Keep raw HTML for link extraction; text is derived later.
+        return html
 
-    with httpx.Client(timeout=30) as client:
-        while to_visit and len(visited) < max_pages:
-            url = to_visit.pop(0)
-            if url in visited:
-                continue
-            visited.add(url)
+    loader = RecursiveUrlLoader(
+        start_url,
+        max_depth=max_depth,
+        prevent_outside=True,
+        extractor=_html_extractor,
+    )
 
-            resp = client.get(url, headers={"User-Agent": "mll-crawler/1.0"})
-            resp.raise_for_status()
+    docs = loader.load()
+    docs = docs[:max_pages]
 
-            links = _extract_links(resp.text, url)
-            for link in links:
-                if not _is_same_domain(link, start_url):
-                    continue
+    results = []
+    for doc in docs:
+        source = doc.metadata.get("source", "")
+        html = doc.page_content or ""
+        results.append({"source": source, "html": html})
 
-                # Case pages usually contain '/doc/'
-                if "/doc/" in link:
-                    case_pages.add(link)
-                # Follow pagination or navigation
-                if "/nav/" in link or "?" in link:
-                    if link not in visited:
-                        to_visit.append(link)
-
-            time.sleep(sleep_seconds)
-
-    return sorted(case_pages)
+    return results
 
 
-def fetch_case_text(url: str) -> str:
-    """Fetch and extract text from a CanLII case page."""
+def fetch_case_text_from_html(html: str) -> str:
+    """Extract text from a CanLII page's HTML."""
 
-    with httpx.Client(timeout=30) as client:
-        resp = client.get(url, headers={"User-Agent": "mll-crawler/1.0"})
-        resp.raise_for_status()
-        return _extract_text_from_html(resp.text)
+    return _extract_text_from_html(html)
 
 
-def find_pdf_links(url: str) -> list[str]:
-    """Find PDF links within a case page."""
+def find_pdf_links_from_html(html: str, base_url: str) -> list[str]:
+    """Find PDF links within a page's HTML."""
 
-    with httpx.Client(timeout=30) as client:
-        resp = client.get(url, headers={"User-Agent": "mll-crawler/1.0"})
-        resp.raise_for_status()
-        links = _extract_links(resp.text, url)
-
+    links = _extract_links(html, base_url)
     return [link for link in links if link.lower().endswith(".pdf")]
 
 
@@ -166,19 +151,24 @@ def index_case_documents(
 
 def crawl_and_index(
     start_url: str = DEFAULT_START_URL,
-    max_pages: int = 30,
+    max_pages: int = 6,
+    max_depth: int = 3,
 ) -> dict:
     """End-to-end crawler + indexer for CanLII cases."""
 
-    case_pages = crawl_canlii_case_pages(start_url=start_url, max_pages=max_pages)
+    pages = crawl_canlii_case_pages(
+        start_url=start_url, max_pages=max_pages, max_depth=max_depth
+    )
 
     documents = []
-    for page in case_pages:
-        text = fetch_case_text(page)
-        documents.append({"text": text, "metadata": {"source": page}})
+    for page in pages:
+        source = page["source"]
+        html = page["html"]
+        text = fetch_case_text_from_html(html)
+        documents.append({"text": text, "metadata": {"source": source}})
 
         # Optional: find and parse PDFs linked from the case page
-        for pdf_link in find_pdf_links(page):
+        for pdf_link in find_pdf_links_from_html(html, source):
             pdf_path = download_pdf(pdf_link)
             pdf_text = convert_pdf_to_text(pdf_path)
             documents.append(

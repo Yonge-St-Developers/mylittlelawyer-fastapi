@@ -13,3 +13,4 @@ pyyaml
 streamlit
 beautifulsoup4
 lxml
+langchain-community
