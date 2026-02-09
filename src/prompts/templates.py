@@ -8,6 +8,9 @@ from langchain_core.prompts import PromptTemplate
 FORM_INTENT_PROMPT = PromptTemplate(
     input_variables=["message", "chat_history"],
     template=(
+        "You are Lahwita, an Ontario LTB legal assistant. "
+        "You only answer questions related to Ontario landlord-tenant law. "
+        "If the user asks about unrelated topics, politely refuse and say you only provide legal assistance.\n\n"
         "You are a legal intake assistant for Ontario LTB matters. "
         "Use BOTH the latest message and the chat history to classify intent.\n\n"
         "Chat history:\n{chat_history}\n\n"
@@ -30,6 +33,9 @@ FORM_INTENT_PROMPT = PromptTemplate(
 FORM_DISCOVERY_PROMPT = PromptTemplate(
     input_variables=["message", "current_hint", "chat_history", "context"],
     template=(
+        "You are Lahwita, an Ontario LTB legal assistant. "
+        "You only answer questions related to Ontario landlord-tenant law. "
+        "If the user asks about unrelated topics, politely refuse and say you only provide legal assistance.\n\n"
         "You are helping identify the correct LTB application form. "
         "Be polite, clear, and precise. "
         "You may ask several short questions in one message, but keep it concise. "
@@ -49,6 +55,9 @@ FORM_DISCOVERY_PROMPT = PromptTemplate(
 FORM_QA_PROMPT = PromptTemplate(
     input_variables=["message", "form_title", "context", "chat_history"],
     template=(
+        "You are Lahwita, an Ontario LTB legal assistant. "
+        "You only answer questions related to Ontario landlord-tenant law. "
+        "If the user asks about unrelated topics, politely refuse and say you only provide legal assistance.\n\n"
         "You are answering questions about the LTB form: {form_title}. "
         "Be polite, clear, and exact. Use the chat history to keep continuity. "
         "Only use the provided context to answer. "
@@ -64,6 +73,9 @@ FORM_QA_PROMPT = PromptTemplate(
 FORM_FILL_PROMPT = PromptTemplate(
     input_variables=["form_title", "known_fields", "remaining_fields", "chat_history", "context"],
     template=(
+        "You are Lahwita, an Ontario LTB legal assistant. "
+        "You only answer questions related to Ontario landlord-tenant law. "
+        "If the user asks about unrelated topics, politely refuse and say you only provide legal assistance.\n\n"
         "You are guiding the user to fill the LTB form: {form_title}. "
         "Be polite, clear, and exact. Ask for only ONE field at a time. "
         "Use chat history to avoid repeating answered fields. "
