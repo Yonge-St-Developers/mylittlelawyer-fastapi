@@ -11,3 +11,8 @@ gdown
 pypdf
 pyyaml
 streamlit
+beautifulsoup4
+lxml
+langchain-community
+playwright
+unstructured

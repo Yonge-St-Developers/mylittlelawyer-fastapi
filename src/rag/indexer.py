@@ -264,11 +264,6 @@ def index_all_from_env(
             os.getenv("INDEX_LTB_GUIDELINES_DRIVE_URL", ""),
             os.getenv("INDEX_LTB_GUIDELINES_LOCAL_DIR", ""),
         ),
-        "ltb_forms": (
-            os.getenv("INDEX_LTB_FORMS", ""),
-            os.getenv("INDEX_LTB_FORMS_DRIVE_URL", ""),
-            os.getenv("INDEX_LTB_FORMS_LOCAL_DIR", ""),
-        ),
         "form_instructions": (
             os.getenv("INDEX_FORM_INSTRUCTIONS", ""),
             os.getenv("INDEX_FORM_INSTRUCTIONS_DRIVE_URL", ""),

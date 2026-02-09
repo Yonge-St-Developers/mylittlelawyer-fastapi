@@ -7,11 +7,14 @@ from app.schemas import (
     FileResponse,
     IndexerRequest,
     IndexerResponse,
+    ConsultantRequest,
+    ConsultantResponse,
 )
 from src.graph.builder import build_chat_graph
 from src.graph.helpers import format_retrieval_context
 from src.graph.file_builder import build_file_graph
 from src.rag.indexer import index_all_from_env
+from src.consultant.graph import build_consultant_graph
 
 app = FastAPI(title="FastAPI App", version="0.1.0")
 
@@ -109,3 +112,23 @@ def indexer_endpoint(payload: IndexerRequest) -> IndexerResponse:
 
     results = index_all_from_env(index_keys=payload.index_keys)
     return IndexerResponse(status="success", results=results)
+
+
+@app.post("/ai/consultant", response_model=ConsultantResponse)
+def consultant_endpoint(payload: ConsultantRequest) -> ConsultantResponse:
+    """
+    Consultant endpoint for agentic RAG (CanLII cases).
+    """
+
+    compiled = build_consultant_graph()
+    state = {
+        "message": payload.message,
+        "chat_history": [
+            {"role": item.role, "content": item.content}
+            for item in (payload.chat_history or [])
+        ],
+        "refresh_index": payload.refresh_index or False,
+    }
+    result = compiled.invoke(state)
+
+    return ConsultantResponse(answer=result.get("response_text", ""))
