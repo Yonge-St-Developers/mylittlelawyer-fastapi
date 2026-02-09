@@ -8,10 +8,10 @@ import streamlit as st
 
 API_URL = os.getenv("FASTAPI_URL", "http://api:8000")
 
-st.set_page_config(page_title="Lahwita Chat", page_icon="💬")
+st.set_page_config(page_title="Lahwita", page_icon="💬")
 
-st.title("Lahwita Chat")
-st.caption("Simple Streamlit client for /ai/chat and /ai/file")
+st.title("Lahwita")
+st.caption("Streamlit client for /ai/chat, /ai/file, and /ai/consultant")
 
 if "session_id" not in st.session_state:
     st.session_state.session_id = "session-demo"
@@ -21,6 +21,8 @@ if "form" not in st.session_state:
     st.session_state.form = None
 if "debug_last" not in st.session_state:
     st.session_state.debug_last = None
+if "consultant_history" not in st.session_state:
+    st.session_state.consultant_history = []
 
 
 def call_chat(message: str) -> Dict[str, Any]:
@@ -50,7 +52,23 @@ def call_file() -> Dict[str, Any]:
         return resp.json()
 
 
+def call_consultant(message: str, refresh_index: bool) -> Dict[str, Any]:
+    payload = {
+        "message": message,
+        "chat_history": st.session_state.consultant_history or None,
+        "refresh_index": refresh_index,
+    }
+
+    with httpx.Client(timeout=120) as client:
+        resp = client.post(f"{API_URL}/ai/consultant", json=payload)
+        resp.raise_for_status()
+        return resp.json()
+
+
 with st.sidebar:
+    st.subheader("Navigation")
+    page = st.radio("Page", ["Form + PDF", "Consultant"], index=0)
+
     st.subheader("Session")
     st.text_input("Session ID", value=st.session_state.session_id, key="session_id")
     st.text_input("Form (optional)", value=st.session_state.form or "", key="form_input")
@@ -59,92 +77,98 @@ with st.sidebar:
     else:
         st.session_state.form = st.session_state.form_input.strip()
 
-    if st.button("Clear chat"):
+    if st.button("Clear form chat"):
         st.session_state.chat_history = []
         st.session_state.form = None
 
-
-st.subheader("Chat")
-
-for msg in st.session_state.chat_history:
-    role = msg.get("role", "user")
-    with st.chat_message(role):
-        st.write(msg.get("content", ""))
-
-user_message = st.chat_input("Type your message")
-
-if user_message:
-    st.session_state.chat_history.append({"role": "user", "content": user_message})
-
-    with st.chat_message("assistant"):
-        try:
-            result = call_chat(user_message)
-            response_text = result.get("message", "")
-            st.write(response_text)
-
-            if result.get("form"):
-                st.session_state.form = result["form"]
-
-            st.session_state.chat_history.append({"role": "assistant", "content": response_text})
-            st.session_state.debug_last = {
-                "debug_request": result.get("debug_request"),
-                "debug_retrieval": result.get("debug_retrieval"),
-            }
-        except Exception as exc:
-            st.error(f"Chat request failed: {exc}")
+    if st.button("Clear consultant chat"):
+        st.session_state.consultant_history = []
 
 
-st.divider()
+if page == "Form + PDF":
+    st.subheader("Chat")
 
-st.subheader("Debug Logs")
-with st.expander("Show last model inputs & retrieval"):
-    if st.session_state.debug_last:
-        st.code(
-            json.dumps(st.session_state.debug_last, indent=2, ensure_ascii=False),
-            language="json",
-        )
-    else:
-        st.write("No logs yet.")
+    for msg in st.session_state.chat_history:
+        role = msg.get("role", "user")
+        with st.chat_message(role):
+            st.write(msg.get("content", ""))
 
-st.subheader("PDF Downloader")
-if st.button("Generate PDF"):
-    try:
-        result = call_file()
-        if result.get("file_base64"):
-            file_bytes = base64.b64decode(result["file_base64"])
-            file_name = result.get("file_name", "form.pdf")
-            st.download_button(
-                label="Download PDF",
-                data=file_bytes,
-                file_name=file_name,
-                mime="application/pdf",
+    user_message = st.chat_input("Type your message")
+
+    if user_message:
+        st.session_state.chat_history.append({"role": "user", "content": user_message})
+
+        with st.chat_message("assistant"):
+            try:
+                result = call_chat(user_message)
+                response_text = result.get("message", "")
+                st.write(response_text)
+
+                if result.get("form"):
+                    st.session_state.form = result["form"]
+
+                st.session_state.chat_history.append(
+                    {"role": "assistant", "content": response_text}
+                )
+                st.session_state.debug_last = {
+                    "debug_request": result.get("debug_request"),
+                    "debug_retrieval": result.get("debug_retrieval"),
+                }
+            except Exception as exc:
+                st.error(f"Chat request failed: {exc}")
+
+    st.divider()
+
+    st.subheader("Debug Logs")
+    with st.expander("Show last model inputs & retrieval"):
+        if st.session_state.debug_last:
+            st.code(
+                json.dumps(st.session_state.debug_last, indent=2, ensure_ascii=False),
+                language="json",
             )
         else:
-            st.info(result.get("message", "No file available yet."))
-    except Exception as exc:
-        st.error(f"File request failed: {exc}")
+            st.write("No logs yet.")
 
-st.divider()
+    st.subheader("PDF Downloader")
+    if st.button("Generate PDF"):
+        try:
+            result = call_file()
+            if result.get("file_base64"):
+                file_bytes = base64.b64decode(result["file_base64"])
+                file_name = result.get("file_name", "form.pdf")
+                st.download_button(
+                    label="Download PDF",
+                    data=file_bytes,
+                    file_name=file_name,
+                    mime="application/pdf",
+                )
+            else:
+                st.info(result.get("message", "No file available yet."))
+        except Exception as exc:
+            st.error(f"File request failed: {exc}")
 
-st.subheader("Consultant (CanLII)")
-consultant_message = st.text_area(
-    "Ask a legal question (consultant):",
-    height=120,
-)
-refresh_index = st.checkbox("Refresh CanLII index before answering", value=False)
+if page == "Consultant":
+    st.subheader("Consultant Chat")
 
-if st.button("Ask Consultant"):
-    try:
-        payload = {
-            "message": consultant_message,
-            "chat_history": st.session_state.chat_history or None,
-            "refresh_index": refresh_index,
-        }
-        with httpx.Client(timeout=120) as client:
-            resp = client.post(f"{API_URL}/ai/consultant", json=payload)
-            resp.raise_for_status()
-            data = resp.json()
+    for msg in st.session_state.consultant_history:
+        role = msg.get("role", "user")
+        with st.chat_message(role):
+            st.write(msg.get("content", ""))
 
-        st.write(data.get("answer", ""))
-    except Exception as exc:
-        st.error(f"Consultant request failed: {exc}")
+    consultant_message = st.chat_input("Ask the consultant")
+    refresh_index = st.checkbox("Refresh CanLII index before answering", value=False)
+
+    if consultant_message:
+        st.session_state.consultant_history.append(
+            {"role": "user", "content": consultant_message}
+        )
+        with st.chat_message("assistant"):
+            try:
+                data = call_consultant(consultant_message, refresh_index)
+                answer = data.get("answer", "")
+                st.write(answer)
+                st.session_state.consultant_history.append(
+                    {"role": "assistant", "content": answer}
+                )
+            except Exception as exc:
+                st.error(f"Consultant request failed: {exc}")

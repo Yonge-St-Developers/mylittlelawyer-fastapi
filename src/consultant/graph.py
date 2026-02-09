@@ -8,7 +8,7 @@ from langgraph.graph import END, StateGraph
 
 from src.consultant.local_indexer import index_local_pdfs
 from src.consultant.prompts import CONSULTANT_PROMPT
-from src.consultant.retriever import retrieve_cases
+from src.consultant.retriever import retrieve_cases, retrieve_pinecone_context
 from src.core.gemini_client import get_default_gemini_manager
 from src.graph.helpers import format_chat_history
 
@@ -20,6 +20,7 @@ class ConsultantState(TypedDict, total=False):
     chat_history: Optional[List[Dict[str, str]]]
     refresh_index: bool
     retrieval: Dict
+    pinecone_retrieval: Dict
     response_text: str
 
 
@@ -34,8 +35,9 @@ def maybe_crawl(state: ConsultantState) -> ConsultantState:
 def retrieve(state: ConsultantState) -> ConsultantState:
     """Retrieve relevant case chunks from ChromaDB."""
 
-    result = retrieve_cases(state["message"], top_k=10)
-    return {**state, "retrieval": result}
+    chroma_result = retrieve_cases(state["message"], top_k=10)
+    pinecone_result = retrieve_pinecone_context(state["message"], top_k=10)
+    return {**state, "retrieval": chroma_result, "pinecone_retrieval": pinecone_result}
 
 
 def generate(state: ConsultantState) -> ConsultantState:
@@ -48,10 +50,25 @@ def generate(state: ConsultantState) -> ConsultantState:
     docs = (state.get("retrieval") or {}).get("documents") or []
     flat_docs = "\n\n".join([item for sub in docs for item in sub]) if docs else ""
 
+    # Add Pinecone context (laws/instructions)
+    pinecone_ctx: list[str] = []
+    for index_name, result in (state.get("pinecone_retrieval") or {}).items():
+        matches = getattr(result, "matches", []) or []
+        for match in matches:
+            meta = getattr(match, "metadata", {}) or {}
+            text = meta.get("text") or ""
+            if text:
+                pinecone_ctx.append(f"[{index_name}] {text}")
+
+    pinecone_context = "\n\n".join(pinecone_ctx).strip()
+    combined_context = "\n\n".join(
+        [c for c in [pinecone_context, flat_docs] if c]
+    ) or "No relevant context found."
+
     prompt = CONSULTANT_PROMPT.format(
         message=state["message"],
         chat_history=chat_history,
-        context=flat_docs or "No relevant context found.",
+        context=combined_context,
     )
 
     response_text = manager.generate_text(prompt)
