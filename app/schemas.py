@@ -114,3 +114,23 @@ class IndexerResponse(BaseModel):
         default=None,
         description="Per-index results for the indexing run.",
     )
+
+
+class ConsultantRequest(BaseModel):
+    """Consultant endpoint request payload."""
+
+    message: str = Field(..., description="User question")
+    chat_history: Optional[List[ChatMessage]] = Field(
+        default=None,
+        description="Optional chat history for context",
+    )
+    refresh_index: Optional[bool] = Field(
+        default=False,
+        description="If true, crawl and refresh CanLII index before retrieval",
+    )
+
+
+class ConsultantResponse(BaseModel):
+    """Consultant endpoint response payload."""
+
+    answer: str = Field(..., description="Assistant response")

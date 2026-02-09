@@ -11,3 +11,5 @@ gdown
 pypdf
 pyyaml
 streamlit
+beautifulsoup4
+lxml

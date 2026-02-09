@@ -11,6 +11,8 @@ services:
     volumes:
       - .:/app
     restart: unless-stopped
+    depends_on:
+      - chroma
 
   streamlit:
     build: .
@@ -24,4 +26,15 @@ services:
       - .:/app
     depends_on:
       - api
+    restart: unless-stopped
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: mll_chroma
+    ports:
+      - "8001:8000"
+    environment:
+      - IS_PERSISTENT=TRUE
+    volumes:
+      - ./data/chroma:/chroma/chroma
     restart: unless-stopped

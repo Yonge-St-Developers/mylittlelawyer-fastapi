@@ -123,3 +123,28 @@ if st.button("Generate PDF"):
             st.info(result.get("message", "No file available yet."))
     except Exception as exc:
         st.error(f"File request failed: {exc}")
+
+st.divider()
+
+st.subheader("Consultant (CanLII)")
+consultant_message = st.text_area(
+    "Ask a legal question (consultant):",
+    height=120,
+)
+refresh_index = st.checkbox("Refresh CanLII index before answering", value=False)
+
+if st.button("Ask Consultant"):
+    try:
+        payload = {
+            "message": consultant_message,
+            "chat_history": st.session_state.chat_history or None,
+            "refresh_index": refresh_index,
+        }
+        with httpx.Client(timeout=120) as client:
+            resp = client.post(f"{API_URL}/ai/consultant", json=payload)
+            resp.raise_for_status()
+            data = resp.json()
+
+        st.write(data.get("answer", ""))
+    except Exception as exc:
+        st.error(f"Consultant request failed: {exc}")
