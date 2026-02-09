@@ -6,7 +6,11 @@ import json
 from typing import Any
 
 from src.core.gemini_client import get_default_gemini_manager
-from src.graph.helpers import format_retrieval_context, parse_intent
+from src.graph.helpers import (
+    format_chat_history,
+    format_retrieval_context,
+    parse_intent,
+)
 from src.graph.state import ChatState
 from src.prompts.chain import select_next_prompt
 from src.prompts.templates import (
@@ -23,7 +27,11 @@ def detect_intent(state: ChatState) -> ChatState:
     """Run Prompt 1 to classify user intent."""
 
     manager = get_default_gemini_manager()
-    prompt = FORM_INTENT_PROMPT.format(message=state["new_message"])
+    chat_history = format_chat_history(state.get("chat_history"))
+    prompt = FORM_INTENT_PROMPT.format(
+        message=state["new_message"],
+        chat_history=chat_history,
+    )
     raw = manager.generate_text(prompt)
 
     return {**state, "intent": parse_intent(raw)}
@@ -66,21 +74,29 @@ def generate_response(state: ChatState) -> ChatState:
     context = format_retrieval_context(state.get("retrieval_results", {}))
 
     if prompt_name == "FORM_DISCOVERY_PROMPT":
+        chat_history = format_chat_history(state.get("chat_history"))
         prompt = FORM_DISCOVERY_PROMPT.format(
             message=state["new_message"],
             current_hint=state.get("form") or "unknown",
+            chat_history=chat_history,
+            context=context or "No relevant context found.",
         )
     elif prompt_name == "FORM_QA_PROMPT":
+        chat_history = format_chat_history(state.get("chat_history"))
         prompt = FORM_QA_PROMPT.format(
             message=state["new_message"],
             form_title=state.get("form") or "unknown",
             context=context or "No relevant context found.",
+            chat_history=chat_history,
         )
     elif prompt_name == "FORM_FILL_PROMPT":
+        chat_history = format_chat_history(state.get("chat_history"))
         prompt = FORM_FILL_PROMPT.format(
             form_title=state.get("form") or "unknown",
             known_fields=format_fields(state.get("known_fields")),
             remaining_fields=format_fields(state.get("remaining_fields")),
+            chat_history=chat_history,
+            context=context or "No relevant context found.",
         )
     else:
         prompt = FORM_CONFIRM_PROMPT.format(
